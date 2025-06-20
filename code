@@ -1,0 +1,47 @@
+calendar_id = "Calendar_id";
+// Récupération des infos de l'affaire
+deal = zoho.crm.getRecordById("Deals",id);
+
+description = deal.get("Description");
+debut = deal.get("Date_heure_d_but_").toTime("yyyy-MM-dd'T'HH:mm:ss","Europe/Paris");
+info debut;
+fin = deal.get("Date_heure_fin_").toTime("yyyy-MM-dd'T'HH:mm:ss","Europe/Paris");
+info fin;
+
+debut_str = debut.toString("yyyyMMdd'T'HHmmss");
+fin_str = fin.toString("yyyyMMdd'T'HHmmss");
+// Récupération de l’ID du compte lié
+
+
+// Envoi des infos dans CALENDAR
+titre = "Titre";
+datetimeMap = Map();
+datetimeMap.put("timezone","Europe/Paris");
+datetimeMap.put("start",debut_str);
+datetimeMap.put("end",fin_str);
+info datetimeMap;
+eventdata = Map();
+eventdata.put("dateandtime",datetimeMap);
+eventdata.put("title",titre);
+eventdata.put("description",description);
+eventdata.put("location","location");
+info eventdata;
+response = invokeurl
+[
+	url :"https://calendar.zoho.eu/api/v1/calendars/" + calendar_id + "/events?eventdata=" + eventdata.toString()
+	type :POST
+	connection:"zcalendar"
+];
+info response;
+// Extraire l'UID et l'etag dans la réponse pour le stocker dans l'affaire 
+if(response.containsKey("events") && response.get("events").size() > 0)
+{
+	event = response.get("events").get(0);
+	uid = event.get("uid");
+	etag = event.get("etag");
+	updateMap = Map();
+	updateMap.put("UID",uid);
+	updateMap.put("Etag",etag);
+	updateResp = zoho.crm.updateRecord("Deals",id,updateMap);
+	info updateResp;
+}
